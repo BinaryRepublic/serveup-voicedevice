@@ -34,8 +34,8 @@ import re
 import sys
 import os
 import time
+import requests
 import threading
-from threading import Thread
 
 from google.cloud import speech
 from google.cloud.speech import enums
@@ -44,6 +44,8 @@ import pyaudio
 from six.moves import queue
 
 import RPi.GPIO as GPIO
+
+Thread = threading.Thread
 
 BUTTON = 17
 
@@ -64,7 +66,8 @@ CHUNK = int(RATE / 10)  # 100ms
 
 class MicrophoneStream(object):
     """Opens a recording stream as a generator yielding the audio chunks."""
-    def __init__(self, rate, chunk):
+    def __init__(self, audio_interface, rate, chunk):
+        self._audio_interface = audio_interface
         self._rate = rate
         self._chunk = chunk
 
@@ -73,7 +76,6 @@ class MicrophoneStream(object):
         self.closed = True
 
     def __enter__(self):
-        self._audio_interface = pyaudio.PyAudio()
         self._audio_stream = self._audio_interface.open(
             format=pyaudio.paInt16,
             # The API currently only supports 1-channel (mono) audio
@@ -85,7 +87,6 @@ class MicrophoneStream(object):
             # overflow while the calling thread makes network requests, etc.
             stream_callback=self._fill_buffer,
         )
-
         self.closed = False
 
         return self
@@ -129,9 +130,10 @@ class MicrophoneStream(object):
 
 
 class VoiceRec(Thread):
-    def __init__(self):
+    def __init__(self, audio_interface):
         self.stopped = False
         Thread.__init__(self)
+        self.audio_interface = audio_interface
         self.client = speech.SpeechClient()
         self.config = types.RecognitionConfig(
             encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
@@ -140,10 +142,13 @@ class VoiceRec(Thread):
         self.streaming_config = types.StreamingRecognitionConfig(
             config=self.config,
             interim_results=True)
-        self.responses = []
+        self.stream = None
+        self.responses = None
+        self.order = ''
 
     def run(self):
-        with MicrophoneStream(RATE, CHUNK) as stream:
+        with MicrophoneStream(self.audio_interface, RATE, CHUNK) as stream:
+            self.stream = stream
             audio_generator = stream.generator()
             requests = (types.StreamingRecognizeRequest(audio_content=content)
                         for content in audio_generator)
@@ -154,27 +159,26 @@ class VoiceRec(Thread):
 
     def listen_print_loop(self):
 
-        listening_lights(True)
+        listening_lights(255, 255, 255)
 
         """Iterates through server responses and prints them.
-
+        
         The responses passed is a generator that will block until a response
         is provided by the server.
-
+        
         Each response may contain multiple results, and each result may contain
         multiple alternatives; for details, see https://goo.gl/tjCPAU.  Here we
         print only the transcription for the top alternative of the top result.
-
+        
         In this case, responses are provided for interim results as well. If the
         response is an interim one, print a line feed at the end of it, to allow
         the next result to overwrite it, until the response is a final one. For the
         final one, print a newline to preserve the finalized transcription.
         """
         num_chars_printed = 0
+        time_count_start = 0
+        time_over = 0
         for response in self.responses:
-
-            if self.stopped:
-                break
 
             if not response.results:
                 continue
@@ -197,21 +201,30 @@ class VoiceRec(Thread):
             overwrite_chars = ' ' * (num_chars_printed - len(transcript))
 
             if not result.is_final:
-                sys.stdout.write(transcript + overwrite_chars + '\r')
-                sys.stdout.flush()
-
+                # sys.stdout.write(transcript + overwrite_chars + '\r')
+                # sys.stdout.flush()
                 num_chars_printed = len(transcript)
 
             else:
-                print(transcript + overwrite_chars)
-
-                # Exit recognition if any of the transcribed phrases could be
-                # one of our keywords.
-                if re.search(r'\b(exit|quit)\b', transcript, re.I):
-                    print('Exiting..')
+                # print(transcript + overwrite_chars)
+                num_chars_printed = 0
+                if self.stopped:
+                    self.order = transcript + overwrite_chars
                     break
 
-                num_chars_printed = 0
+        # final order request to order-api
+        self.order_request()
+
+    def order_request(self):
+        print(self.order)
+        url = "http://138.68.71.39:3000/apporder"
+        payload = "{\n\t\"order\":\"" + self.order + "\"\n}"
+        headers = {
+            'Content-Type': "application/json",
+            'Cache-Control': "no-cache"
+        }
+        response = requests.request("POST", url, data=payload, headers=headers)
+        print(response.text)
 
     def stop(self):
         self.stopped = True
@@ -220,33 +233,32 @@ class VoiceRec(Thread):
 led = apa102.APA102(num_led=3)
 
 
-def listening_lights(activate):
-    brightness = 100
-    if not activate:
-        brightness = 0
-
-    led.set_pixel(0, 255, 255, 255, brightness)
-    led.set_pixel(1, 255, 255, 255, brightness)
-    led.set_pixel(2, 255, 255, 255, brightness)
+def listening_lights(r, g, b):
+    led.set_pixel(0, r, g, b, 100)
+    led.set_pixel(1, r, g, b, 100)
+    led.set_pixel(2, r, g, b, 100)
     led.show()
 
 
 def main():
+
     button = False
-    voice_rec_thread = VoiceRec()
+    voice_rec_thread = VoiceRec(pyaudio.PyAudio())
     print('ready')
     while True:
         state = GPIO.input(BUTTON)
-        if state and button:
-            listening_lights(False)
-            voice_rec_thread.stop()
-            new_thread = VoiceRec()
-            voice_rec_thread = new_thread
-            button = False
 
         if not state and not button:
             voice_rec_thread.start()
             button = True
+
+        if state and button:
+            listening_lights(255, 0, 0)
+            voice_rec_thread.stop()
+            voice_rec_thread.join(5)
+            voice_rec_thread = VoiceRec(pyaudio.PyAudio())
+            listening_lights(0, 0, 0)
+            button = False
 
 
 if __name__ == '__main__':

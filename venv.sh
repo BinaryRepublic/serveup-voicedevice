@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 pip install PyAudio
 pip install RPi.GPIO
 pip install grpcio
