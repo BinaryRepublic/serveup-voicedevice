@@ -51,7 +51,7 @@ class OrderingRecording(Thread):
         num_chars_printed = 0
 
         for response in self.responses:
-
+            print(response)
             if not response.results:
                 continue
 
@@ -69,6 +69,7 @@ class OrderingRecording(Thread):
                 num_chars_printed = 0
                 if self.stopped:
                     self.order = transcript + overwrite_chars
+                    self.order = self.order.encode("utf-8")
                     break
 
         # final order request to order-api

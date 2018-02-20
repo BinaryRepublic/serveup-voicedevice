@@ -7,6 +7,6 @@ class Lights:
         self.led = apa102.APA102(num_led=number)
 
     def change(self, r, g, b):
-        for x in range(0, self.number - 1):
+        for x in range(0, self.number):
             self.led.set_pixel(x, r, g, b, 100)
         self.led.show()
