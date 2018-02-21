@@ -15,7 +15,7 @@ CHUNK = int(RATE / 10)  # 100ms
 
 
 class OrderingRecording(Thread):
-    def __init__(self, audio_interface):
+    def __init__(self, audio_interface, contexts_phrases):
         self.stopped = False
         Thread.__init__(self)
         self.audio_interface = audio_interface
@@ -23,10 +23,15 @@ class OrderingRecording(Thread):
         self.config = types.RecognitionConfig(
             encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
             sample_rate_hertz=RATE,
-            language_code='de')
+            language_code='de',
+            speech_contexts=[speech.types.SpeechContext(
+                phrases=contexts_phrases
+            )]
+        )
         self.streaming_config = types.StreamingRecognitionConfig(
             config=self.config,
-            interim_results=True)
+            interim_results=True
+        )
         self.stream = None
         self.responses = None
         self.order = ''
@@ -88,3 +93,4 @@ class OrderingRecording(Thread):
 
     def stop(self):
         self.stopped = True
+        self.stream.stop_stream()

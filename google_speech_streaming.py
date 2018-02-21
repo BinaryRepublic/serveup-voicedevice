@@ -47,6 +47,10 @@ class GoogleMicrophoneStream(object):
 
         return self
 
+    def stop_stream(self):
+        self._audio_stream.stop_stream()
+        self._audio_stream.close()
+
     def __exit__(self, type, value, traceback):
         self._audio_stream.stop_stream()
         self._audio_stream.close()
