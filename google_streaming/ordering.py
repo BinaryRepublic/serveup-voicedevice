@@ -1,9 +1,9 @@
 from google.cloud import speech
 from google.cloud.speech import enums
 from google.cloud.speech import types
-from google_speech_streaming import GoogleMicrophoneStream
+from google_streaming.google_speech_streaming import GoogleMicrophoneStream
 
-from lights import Lights
+from async.lights import Lights
 
 import requests
 import threading

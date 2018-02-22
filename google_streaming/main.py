@@ -5,12 +5,12 @@ import pyaudio
 import RPi.GPIO as GPIO
 
 # lights
-from lights import Lights
+from async.lights import Lights
 
 # environment
 import os
 import requests
-from ordering import OrderingRecording
+from google_streaming.ordering import OrderingRecording
 
 BUTTON = 17
 
