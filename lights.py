@@ -1,4 +1,4 @@
-from async import apa102
+import apa102
 
 
 class Lights:

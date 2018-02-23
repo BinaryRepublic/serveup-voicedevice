@@ -5,7 +5,7 @@ import pyaudio
 import RPi.GPIO as GPIO
 
 # lights
-from async.lights import Lights
+from lights import Lights
 
 # environment
 import os
