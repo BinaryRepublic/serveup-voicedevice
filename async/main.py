@@ -11,12 +11,18 @@ from ordering import Ordering
 
 from threading import Thread
 
-ordering = Ordering("http://138.68.71.39:3000/apporder")
+ordering = Ordering("http://138.68.71.39:3000/order")
+ordering_getonly = Ordering("http://138.68.71.39:3000/order?getonly=1")
 
 
-def request_output(order):
+def request_output(order, headline, getonly=False):
     print('ORDER: ' + order)
-    result = ordering.request(order)
+    if not getonly:
+        result = ordering.request(order)
+    else:
+        result = ordering_getonly.request(order)
+
+    print(headline)
     for item in result:
         print('----')
         print(item['name'])
@@ -31,8 +37,7 @@ class GoogleSpeech(Thread):
 
     def run(self):
         order = self.speech_processing.google_speech()
-        print('\n\n---------------- GOOGLE SPEECH ----------------')
-        request_output(order)
+        request_output(order, '\n\n---------------- GOOGLE SPEECH ----------------')
 
 
 class WitAi(Thread):
@@ -42,8 +47,7 @@ class WitAi(Thread):
 
     def run(self):
         order = self.speech_processing.wit_ai()
-        print('\n\n---------------- WIT AI ----------------')
-        request_output(order)
+        request_output(order, '\n\n---------------- WIT AI ----------------', True)
 
 
 class BingVoice(Thread):
@@ -53,8 +57,7 @@ class BingVoice(Thread):
 
     def run(self):
         order = self.speech_processing.bing()
-        print('\n\n---------------- BING VOICE ----------------')
-        request_output(order)
+        request_output(order, '\n\n---------------- BING VOICE ----------------', True)
 
 
 def main():
