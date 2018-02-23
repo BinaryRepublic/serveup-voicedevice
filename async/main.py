@@ -8,35 +8,38 @@ from lights import Lights
 # libraries
 from speech_processing import SpeechProcessing
 from ordering import Ordering
-
+import requests
 from threading import Thread
+import json
 
 ordering = Ordering("http://138.68.71.39:3000/order")
 ordering_getonly = Ordering("http://138.68.71.39:3000/order?getonly=1")
 
 
 def request_output(order, headline, getonly=False):
-    print('ORDER: ' + order)
-    if not getonly:
-        result = ordering.request(order)
-    else:
-        result = ordering_getonly.request(order)
-
     print(headline)
-    for item in result:
-        print('----')
-        print(item['name'])
-        print(item['nb'])
-        print(item['size'])
+    if order:
+        print('ORDER: ' + order)
+        if not getonly:
+            result = ordering.request(order)
+        else:
+            result = ordering_getonly.request(order)
+
+        for item in result:
+            print('----')
+            print(item['name'])
+            print(item['nb'])
+            print(item['size'])
 
 
 class GoogleSpeech(Thread):
-    def __init__(self, speech_processing):
+    def __init__(self, speech_processing, menu_keywords):
         Thread.__init__(self)
         self.speech_processing = speech_processing
+        self.menu_keywords = menu_keywords
 
     def run(self):
-        order = self.speech_processing.google_speech()
+        order = self.speech_processing.google_speech(self.menu_keywords)
         request_output(order, '\n\n---------------- GOOGLE SPEECH ----------------')
 
 
@@ -71,6 +74,13 @@ def main():
 
     recording_thread = Record(pyaudio.PyAudio())
 
+    url = "http://138.68.71.39:3000/orderkeywords"
+    headers = {
+        'Content-Type': "application/json",
+        'Cache-Control': "no-cache"
+    }
+    menu_keywords = requests.request("GET", url, headers=headers)
+    menu_keywords = json.loads(menu_keywords.text)
     while True:
         state = GPIO.input(BUTTON)
 
@@ -89,7 +99,7 @@ def main():
             # wave_output = 'record9.wav' TEST
             speech_processing = SpeechProcessing(wave_output)
 
-            google = GoogleSpeech(speech_processing)
+            google = GoogleSpeech(speech_processing, menu_keywords)
             google.start()
 
             wit = WitAi(speech_processing)

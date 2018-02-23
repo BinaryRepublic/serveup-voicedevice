@@ -13,10 +13,14 @@ class SpeechProcessing:
         with sr.AudioFile(audio_file) as source:
             self.audio = self.r.record(source)  # read the entire audio file
 
-    def google_speech(self):
+    def google_speech(self, menu_keywords):
+        print(menu_keywords)
         google_speech_key = json.dumps(json.load(open('google_speech_credentials.json')))
         try:
-            return self.r.recognize_google_cloud(self.audio, credentials_json=google_speech_key, language='de')
+            return self.r.recognize_google_cloud(self.audio,
+                                                 credentials_json=google_speech_key,
+                                                 language='de',
+                                                 preferred_phrases=menu_keywords)
         except sr.UnknownValueError:
             print("Google Cloud Speech could not understand audio")
         except sr.RequestError as e:
