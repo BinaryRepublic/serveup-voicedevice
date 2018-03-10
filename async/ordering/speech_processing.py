@@ -7,15 +7,14 @@ import json
 class SpeechProcessing:
     def __init__(self, filename):
         self.filename = filename
-        audio_file = path.join(path.dirname(path.realpath(__file__)), self.filename)
+        audio_file = path.join(path.dirname(path.realpath(__file__)), "../soundfiles/", self.filename)
         # use the audio file as the audio source
         self.r = sr.Recognizer()
         with sr.AudioFile(audio_file) as source:
             self.audio = self.r.record(source)  # read the entire audio file
 
     def google_speech(self, menu_keywords):
-        print(menu_keywords)
-        google_speech_key = json.dumps(json.load(open('google_speech_credentials.json')))
+        google_speech_key = json.dumps(json.load(open('ordering/google_speech_credentials.json')))
         try:
             return self.r.recognize_google_cloud(self.audio,
                                                  credentials_json=google_speech_key,

@@ -1,66 +1,18 @@
-# microphone
-from record import Record
-import pyaudio
-# button
-import RPi.GPIO as GPIO
-# lights
-from lights import Lights
 # libraries
-from speech_processing import SpeechProcessing
-from ordering import Ordering
 import requests
-from threading import Thread
 import json
+import pyaudio
+import RPi.GPIO as GPIO
 
-ordering = Ordering("http://138.68.71.39:3000/order")
-ordering_getonly = Ordering("http://138.68.71.39:3000/order?getonly=1")
+# interface
+from interface.lights import Lights
 
+# recording
+from record import Record
 
-def request_output(order, headline, getonly=False):
-    print(headline)
-    if order:
-        print('ORDER: ' + order)
-        if not getonly:
-            result = ordering.request(order)
-        else:
-            result = ordering_getonly.request(order)
-
-        for item in result:
-            print('----')
-            print(item['name'])
-            print(item['nb'])
-            print(item['size'])
-
-
-class GoogleSpeech(Thread):
-    def __init__(self, speech_processing, menu_keywords):
-        Thread.__init__(self)
-        self.speech_processing = speech_processing
-        self.menu_keywords = menu_keywords
-
-    def run(self):
-        order = self.speech_processing.google_speech(self.menu_keywords)
-        request_output(order, '\n\n---------------- GOOGLE SPEECH ----------------')
-
-
-class WitAi(Thread):
-    def __init__(self, speech_processing):
-        Thread.__init__(self)
-        self.speech_processing = speech_processing
-
-    def run(self):
-        order = self.speech_processing.wit_ai()
-        request_output(order, '\n\n---------------- WIT AI ----------------', True)
-
-
-class BingVoice(Thread):
-    def __init__(self, speech_processing):
-        Thread.__init__(self)
-        self.speech_processing = speech_processing
-
-    def run(self):
-        order = self.speech_processing.bing()
-        request_output(order, '\n\n---------------- BING VOICE ----------------', True)
+# ordering
+from ordering.speech_processing import SpeechProcessing
+import ordering.speech_processing_threads as SpeechProcessingThreads
 
 
 def main():
@@ -96,16 +48,15 @@ def main():
             # reinitialize thread
             recording_thread = Record(pyaudio.PyAudio())
 
-            # wave_output = 'record9.wav' TEST
             speech_processing = SpeechProcessing(wave_output)
 
-            google = GoogleSpeech(speech_processing, menu_keywords)
+            google = SpeechProcessingThreads.GoogleSpeech(speech_processing, menu_keywords)
             google.start()
 
-            wit = WitAi(speech_processing)
+            wit = SpeechProcessingThreads.WitAi(speech_processing)
             wit.start()
 
-            bing = BingVoice(speech_processing)
+            bing = SpeechProcessingThreads.BingVoice(speech_processing)
             bing.start()
 
             google.join()

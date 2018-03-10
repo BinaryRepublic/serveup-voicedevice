@@ -3,7 +3,7 @@ from google.cloud.speech import enums
 from google.cloud.speech import types
 from google_streaming.google_speech_streaming import GoogleMicrophoneStream
 
-from async.lights import Lights
+from async.interface.lights import Lights
 
 import requests
 import threading

@@ -17,13 +17,8 @@ class Record(Thread):
         Thread.__init__(self)
 
         self.audio_interface = audio_interface
-
-        filename_prefix = "record"
-        filename_nb = 0
-        file_type = ".wav"
-        while os.path.isfile(filename_prefix + str(filename_nb) + file_type):
-            filename_nb += 1
-        self.filename = filename_prefix + str(filename_nb) + file_type
+        self.filedir = "soundfiles/"
+        self.filename = "new.wav"
 
         self.stream = None
         self.frames = []
@@ -45,7 +40,7 @@ class Record(Thread):
         self.stream.close()
         self.audio_interface.terminate()
 
-        wave_file = wave.open(self.filename, 'wb')
+        wave_file = wave.open(self.filedir + self.filename, 'wb')
         wave_file.setnchannels(CHANNELS)
         wave_file.setsampwidth(self.audio_interface.get_sample_size(FORMAT))
         wave_file.setframerate(RATE)
