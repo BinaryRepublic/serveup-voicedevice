@@ -33,7 +33,7 @@ class Ordering:
 
         if order_api.status_code != 200:
             return None
-        elif self.analyzeApi["url"]:
+        elif self.analyzeApi["url"] and "id" in order_api_text:
             file_dir = "soundfiles/"
             file_src = file_dir + "new.wav"
 
@@ -49,6 +49,8 @@ class Ordering:
             analyze_api = requests.post(self.analyzeApi["url"],
                                         data=data,
                                         headers=headers)
-            print(analyze_api.text)
+            analyze_api_text = json.loads(analyze_api.text)
+            print("order_id:       " + analyze_api_text["id"])
+            print("soundfile-path: " + analyze_api_text["soundfile-path"])
 
         return order_api_text
