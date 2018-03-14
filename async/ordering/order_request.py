@@ -5,7 +5,7 @@ import os
 import helper.encode_multipart as formdata
 
 
-class Ordering:
+class OrderRequest:
     def __init__(self, order_api_url, analyze_api_url):
         self.orderApi = {
             "url": order_api_url,
