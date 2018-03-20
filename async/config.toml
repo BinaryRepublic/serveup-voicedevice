@@ -1,0 +1,44 @@
+ENV = 'dev'
+
+[authApi]
+    [authApi.prod]
+        host = "http://138.68.71.39"
+        port = 2000
+    [authApi.stage]
+        host = "http://138.68.71.39"
+        port = 2100
+    [authApi.dev]
+        host = "http://138.68.71.39"
+        port = 2200
+
+[orderApi]
+    [orderApi.prod]
+        host = "http://138.68.71.39"
+        port = 3000
+    [orderApi.stage]
+        host = "http://138.68.71.39"
+        port = 3100
+    [orderApi.dev]
+        host = "http://138.68.71.39"
+        port = 3200
+
+[analyzeApi]
+    [analyzeApi.prod]
+        host = "http://138.68.71.39"
+        port = 5000
+    [analyzeApi.stage]
+        host = "http://138.68.71.39"
+        port = 5100
+    [analyzeApi.dev]
+        host = "http://138.68.71.39"
+        port = 5200
+
+
+[roCredentials]
+    # DEV
+    voiceDeviceId = "f9cb0c7d-9db6-4632-940a-b507cf8ff79e"
+    mail = "tobias.trinks@code.berlin"
+    password = "1234"
+
+# ADD LATER > SPEECH CREDENTIALS
+# [googleSpeechCredentials]

@@ -2,14 +2,13 @@ from threading import Thread
 
 
 class GoogleSpeech(Thread):
-    def __init__(self, speech_processing, menu_keywords):
+    def __init__(self, speech_processing):
         Thread.__init__(self)
         self.speech_processing = speech_processing
-        self.menu_keywords = menu_keywords
         self._return = False
 
     def run(self):
-        order = self.speech_processing.google_speech(self.menu_keywords)
+        order = self.speech_processing.google_speech()
         self._return = order
 
     def join(self):

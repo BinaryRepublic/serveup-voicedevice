@@ -1,20 +1,35 @@
-# from speech_processing_google import SpeechProcessingGoogle
+import requests
 import speech_recognition as sr
 from os import path
 import json
 
+from helper.toml_loader import Config
+cfg = Config("config.toml")
+
 
 class SpeechProcessing:
-    def __init__(self, filename):
+    def __init__(self, filename, ro_auth):
+        self.cfg = cfg.load()
         self.filename = filename
+        self.ro_auth = ro_auth
         audio_file = path.join(path.dirname(path.realpath(__file__)), "../soundfiles/", self.filename)
         # use the audio file as the audio source
         self.r = sr.Recognizer()
         with sr.AudioFile(audio_file) as source:
             self.audio = self.r.record(source)  # read the entire audio file
 
-    def google_speech(self, menu_keywords):
+    def google_speech(self):
         google_speech_key = json.dumps(json.load(open('ordering/google_speech_credentials.json')))
+
+        url = self.cfg["orderApi"]["host"] + ":" + str(self.cfg["orderApi"]["port"]) + "/orderkeywords"
+        headers = {
+            'Content-Type': "application/json",
+            'Cache-Control': "no-cache",
+            'Access-Token': self.ro_auth.access()
+        }
+        menu_keywords = requests.request("GET", url, headers=headers)
+        menu_keywords = json.loads(menu_keywords.text)
+
         try:
             return self.r.recognize_google_cloud(self.audio,
                                                  credentials_json=google_speech_key,

@@ -4,3 +4,4 @@ pip install RPi.GPIO
 pip install grpcio
 pip install google-cloud-speech
 pip install requests
+pip install toml

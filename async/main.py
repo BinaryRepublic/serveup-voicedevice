@@ -17,10 +17,14 @@ from ordering.speech_processing import SpeechProcessing
 import ordering.speech_processing_threads as SpeechProcessingThreads
 from ordering.order_request import OrderRequest
 
-orderApi = "http://138.68.71.39:3200/order"
-analyzeApi = "http://138.68.71.39:5200/order"
-orderRequest = OrderRequest(orderApi, analyzeApi)
-# orderRequest_getOnly = OrderRequest("http://138.68.71.39:3200/order?getonly=1", False)
+# authentication
+from authentication.auth import Authentication
+
+ro_auth = Authentication()
+ro_auth.login()
+
+# initialize orderRequest
+orderRequest = OrderRequest(ro_auth)
 
 
 def check_connection(host):
@@ -57,31 +61,26 @@ def result_output(order, result, headline):
 
 
 def main():
+    # prepare button interface
     BUTTON = 17
-
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(BUTTON, GPIO.IN)
     button = False
 
+    # initialize recording thread
     recording_thread = Record(pyaudio.PyAudio())
 
-    url = "http://138.68.71.39:3200/orderkeywords"
-    headers = {
-        'Content-Type': "application/json",
-        'Cache-Control': "no-cache"
-    }
-    menu_keywords = requests.request("GET", url, headers=headers)
-    menu_keywords = json.loads(menu_keywords.text)
-
+    # make sure microServices are available
     check_connection("138.68.71.39")
 
+    # start main loop
     while True:
         state = GPIO.input(BUTTON)
 
         if not state and not button:
             check_connection("138.68.71.39")
             recording_thread.start()
-            # lights_change(255, 255, 255)
+            lights_change(255, 255, 255)
             button = True
 
         if state and button:
@@ -94,9 +93,9 @@ def main():
             if wave_output:
                 # reinitialize thread
                 recording_thread = Record(pyaudio.PyAudio())
-                speech_processing = SpeechProcessing(wave_output)
+                speech_processing = SpeechProcessing(wave_output, ro_auth)
 
-                google = SpeechProcessingThreads.GoogleSpeech(speech_processing, menu_keywords)
+                google = SpeechProcessingThreads.GoogleSpeech(speech_processing)
                 google.start()
 
                 wit = SpeechProcessingThreads.WitAi(speech_processing)
@@ -125,8 +124,8 @@ def main():
                         if order:
                             result = orderRequest.request(order)
                         order = google.join()
-
-                print(print_headline + ' order: ' + order)
+                if order:
+                    print(print_headline + ' order: ' + order)
             else:
                 order = False
                 print_headline = False
