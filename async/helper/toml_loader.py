@@ -8,8 +8,9 @@ class Config:
     def load(self):
         with open(self.src, 'r') as config_string:
             config = toml.load(config_string)
-            env = config["ENV"]
+            env = config["env"]
             config["authApi"] = config["authApi"][env]
             config["orderApi"] = config["orderApi"][env]
+            config["adminApi"] = config["adminApi"][env]
             config["analyzeApi"] = config["analyzeApi"][env]
             return config

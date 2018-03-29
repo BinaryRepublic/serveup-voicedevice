@@ -1,4 +1,4 @@
-ENV = 'dev'
+env = "dev"
 
 [authApi]
     [authApi.prod]
@@ -21,6 +21,17 @@ ENV = 'dev'
     [orderApi.dev]
         host = "http://138.68.71.39"
         port = 3200
+
+[adminApi]
+    [adminApi.prod]
+        host = "http://138.68.71.39"
+        port = 4000
+    [adminApi.stage]
+        host = "http://138.68.71.39"
+        port = 4100
+    [adminApi.dev]
+        host = "http://138.68.71.39"
+        port = 4200
 
 [analyzeApi]
     [analyzeApi.prod]

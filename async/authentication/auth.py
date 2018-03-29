@@ -32,6 +32,8 @@ class Authentication:
         return datetime.datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%S.%fZ")
 
     def login(self):
+        # ----------------- AUTH DISABLED
+        # return ""
         # get grant
         response = requests.post(self.cred_host + ":" + str(self.cred_port) + "/login",
                                  data=json.dumps({
@@ -46,6 +48,8 @@ class Authentication:
                                      data=json.dumps({
                                         "grant": grant
                                      }), headers=self.auth_headers)
+            print(response)
+            print(response.text)
             if response.status_code == 200:
                 tokens = response.json()
                 self.access_token = tokens["accessToken"]
@@ -56,6 +60,8 @@ class Authentication:
         return False
 
     def access(self):
+        # ----------------- AUTH DISABLED
+        # return ""
         if datetime.datetime.now() < self.expire:
             return self.access_token
         else:

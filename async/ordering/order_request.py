@@ -9,7 +9,7 @@ cfg = Config("config.toml")
 
 
 class OrderRequest:
-    def __init__(self, ro_auth):
+    def __init__(self, ro_auth, voice_device):
         self.cfg = cfg.load()
         self.orderApi = {
             "url": self.cfg["orderApi"]["host"] + ":" + str(self.cfg["orderApi"]["port"]) + "/order",
@@ -28,14 +28,14 @@ class OrderRequest:
             }
         }
         self.ro_auth = ro_auth
-        self.voice_device_id = self.cfg["roCredentials"]["voiceDeviceId"]
+        self.voice_device = voice_device
 
     def request(self, order):
         # add authentication headers
         self.orderApi["headers"]["Access-Token"] = self.ro_auth.access()
         # ORDER-API
         order_api = requests.post(self.orderApi["url"],
-                                  data=json.dumps({'order': order, 'voiceDeviceId': self.voice_device_id}),
+                                  data=json.dumps({'order': order, 'voiceDeviceId': self.voice_device["id"]}),
                                   headers=self.orderApi["headers"])
         order_api_text = json.loads(order_api.text)
 

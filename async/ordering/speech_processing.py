@@ -8,10 +8,12 @@ cfg = Config("config.toml")
 
 
 class SpeechProcessing:
-    def __init__(self, filename, ro_auth):
+    def __init__(self, filename, ro_auth, voice_device):
         self.cfg = cfg.load()
         self.filename = filename
         self.ro_auth = ro_auth
+        self.voice_device = voice_device
+
         audio_file = path.join(path.dirname(path.realpath(__file__)), "../soundfiles/", self.filename)
         # use the audio file as the audio source
         self.r = sr.Recognizer()
@@ -22,6 +24,7 @@ class SpeechProcessing:
         google_speech_key = json.dumps(json.load(open('ordering/google_speech_credentials.json')))
 
         url = self.cfg["orderApi"]["host"] + ":" + str(self.cfg["orderApi"]["port"]) + "/orderkeywords"
+        url = url + "?restaurant-id=" + self.voice_device["restaurantId"]
         headers = {
             'Content-Type': "application/json",
             'Cache-Control': "no-cache",

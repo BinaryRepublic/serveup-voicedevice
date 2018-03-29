@@ -2,7 +2,6 @@
 import os
 import requests
 import time
-import json
 import pyaudio
 import RPi.GPIO as GPIO
 
@@ -17,14 +16,11 @@ from ordering.speech_processing import SpeechProcessing
 import ordering.speech_processing_threads as SpeechProcessingThreads
 from ordering.order_request import OrderRequest
 
+# config
+from helper.toml_loader import Config
+
 # authentication
 from authentication.auth import Authentication
-
-ro_auth = Authentication()
-ro_auth.login()
-
-# initialize orderRequest
-orderRequest = OrderRequest(ro_auth)
 
 
 def check_connection(host):
@@ -53,14 +49,30 @@ def result_output(order, result, headline):
     if result:
         print('ORDER: ' + order)
 
-        for item in result["items"]:
-            print('----')
-            print(item['name'])
-            print(item['nb'])
-            print(item['size'])
+        if len(result["drinks"]):
+            print('---- DRINKS')
+            for drink in result["drinks"]:
+                print(drink['name'])
+                print(drink['nb'])
+                print(drink['size'])
+                print('---')
+
+        if len(result["services"]):
+            print('---- SERVICES')
+            for service in result["services"]:
+                print(service['name'])
+                print('---')
 
 
 def main():
+    # authentication
+    ro_auth = Authentication()
+    ro_auth.login()
+
+    # load config
+    config = Config("config.toml")
+    cfg = config.load()
+
     # prepare button interface
     BUTTON = 17
     GPIO.setmode(GPIO.BCM)
@@ -72,6 +84,24 @@ def main():
 
     # make sure microServices are available
     check_connection("138.68.71.39")
+
+    # get voiceDevice info
+    url = cfg["adminApi"]["host"] + ":" + str(cfg["adminApi"]["port"])
+    url += "/voicedevice/" + cfg["roCredentials"]["voiceDeviceId"]
+    print(url)
+    headers = {
+        "Access-Token": ro_auth.access()
+    }
+    print(headers)
+    response = requests.get(url, headers=headers)
+    voice_device = None
+    print(response)
+    print(response.text)
+    if response.status_code == 200:
+        voice_device = response.json()
+
+    # initialize orderRequest
+    order_request = OrderRequest(ro_auth, voice_device)
 
     # start main loop
     while True:
@@ -93,7 +123,7 @@ def main():
             if wave_output:
                 # reinitialize thread
                 recording_thread = Record(pyaudio.PyAudio())
-                speech_processing = SpeechProcessing(wave_output, ro_auth)
+                speech_processing = SpeechProcessing(wave_output, ro_auth, voice_device)
 
                 google = SpeechProcessingThreads.GoogleSpeech(speech_processing)
                 google.start()
@@ -109,20 +139,21 @@ def main():
                 }
 
                 order = bing.join()
+
                 if order:
-                    result = orderRequest.request(order)
+                    result = order_request.request(order)
                 print_headline = 'BING'
 
-                if not len(result["items"]):
+                if not order or (not len(result["drinks"]) and not len(result["services"])):
                     order = wit.join()
                     if order:
-                        result = orderRequest.request(order)
+                        result = order_request.request(order)
                     print_headline = 'WIT AI'
 
-                    if not len(result["items"]):
+                    if not order or (not len(result["drinks"]) and not len(result["services"])):
                         print_headline = 'GOOGLE'
                         if order:
-                            result = orderRequest.request(order)
+                            result = order_request.request(order)
                         order = google.join()
                 if order:
                     print(print_headline + ' order: ' + order)
@@ -134,7 +165,7 @@ def main():
             lights.join()
 
             if wave_output:
-                if len(result["items"]):
+                if order and (len(result["drinks"]) or len(result["services"])):
                     lights_change(r=0, g=255, b=0, duration=1)
                     result_output(order, result, '------------- ' + print_headline + ' -------------')
                 else:
